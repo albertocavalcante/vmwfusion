@@ -156,9 +156,13 @@ func archiveVM(vmName, drive string, handleRunning bool) error {
 		if !dryRun {
 			fmt.Print("Proceed with shutdown and archive? (y/N): ")
 			reader := bufio.NewReader(os.Stdin)
-			input, _ := reader.ReadString('\n')
+			input, err := reader.ReadString('\n')
+			if err != nil {
+				GlobalLogger.Warning.Printf("Failed to read input: %v\n", err)
+				return fmt.Errorf("failed to read user input")
+			}
 			
-			if strings.TrimSpace(strings.ToLower(input)) != "y" {
+			if input := strings.TrimSpace(strings.ToLower(input)); input != "y" && input != "yes" {
 				GlobalLogger.Info.Println("Operation cancelled by user")
 				return nil
 			}
@@ -235,6 +239,10 @@ func archiveVM(vmName, drive string, handleRunning bool) error {
 		input, _ := reader.ReadString('\n')
 		
 		if strings.TrimSpace(input) == "DELETE" {
+			// Validate that the path is within the expected VM directory
+			if !strings.HasPrefix(vmBundle.Path, globalConfig.LocalVMDir) {
+				return fmt.Errorf("VM bundle path is outside expected directory: %s", vmBundle.Path)
+			}
 			if err := os.RemoveAll(vmBundle.Path); err != nil {
 				return fmt.Errorf("failed to delete original VM: %w", err)
 			}
@@ -324,9 +332,13 @@ func fastDeployVM(vmName, drive, workName string) error {
 	// Ask if user wants to start the VM
 	fmt.Print("Start VM now? (y/N): ")
 	reader := bufio.NewReader(os.Stdin)
-	input, _ := reader.ReadString('\n')
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		GlobalLogger.Warning.Printf("Failed to read input: %v\n", err)
+		return nil
+	}
 	
-	if strings.TrimSpace(strings.ToLower(input)) == "y" {
+	if input := strings.TrimSpace(strings.ToLower(input)); input == "y" || input == "yes" {
 		return manageVMPower(destPath, "start")
 	}
 	
@@ -371,9 +383,13 @@ func syncVMBundle(sourcePath, destPath, operation string) error {
 		fmt.Print("Overwrite? (y/N): ")
 		
 		reader := bufio.NewReader(os.Stdin)
-		input, _ := reader.ReadString('\n')
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			GlobalLogger.Warning.Printf("Failed to read input: %v\n", err)
+			return fmt.Errorf("failed to read user input")
+		}
 		
-		if strings.TrimSpace(strings.ToLower(input)) != "y" {
+		if input := strings.TrimSpace(strings.ToLower(input)); input != "y" && input != "yes" {
 			return fmt.Errorf("operation cancelled by user")
 		}
 		

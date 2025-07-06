@@ -82,7 +82,9 @@ func infoCommands() *cobra.Command {
 			GlobalLogger.Info.Println("VMware Fusion Information:")
 			
 			// Check if VMware Fusion is installed
-			vmwareFusionApp := filepath.Join(globalConfig.VMwarePath, "..", "..")
+			// vmrun is in …/VMware Fusion.app/Contents/Library/vmrun
+			// so we need to go up 3 levels to get to the .app bundle
+			vmwareFusionApp := filepath.Clean(filepath.Join(globalConfig.VMwarePath, "..", "..", ".."))
 			fmt.Printf("  Installation Path: %s\n", vmwareFusionApp)
 			
 			// VMware version

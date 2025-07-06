@@ -363,9 +363,13 @@ func createVMClone(sourceVM, destName, cloneType string) error {
 	// Ask if user wants to start the clone
 	fmt.Print("Start cloned VM now? (y/N): ")
 	reader := bufio.NewReader(os.Stdin)
-	input, _ := reader.ReadString('\n')
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		GlobalLogger.Warning.Printf("Failed to read input: %v\n", err)
+		return nil
+	}
 	
-	if strings.TrimSpace(strings.ToLower(input)) == "y" {
+	if input := strings.TrimSpace(strings.ToLower(input)); input == "y" || input == "yes" {
 		return manageVMPower(destPath, "start")
 	}
 	

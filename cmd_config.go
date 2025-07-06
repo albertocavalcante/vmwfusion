@@ -67,7 +67,10 @@ func configCommands() *cobra.Command {
 				fmt.Print("Overwrite? (y/N): ")
 				
 				var response string
-				fmt.Scanln(&response)
+				if _, err := fmt.Scanln(&response); err != nil {
+					GlobalLogger.Warning.Printf("Failed to read input: %v\n", err)
+					return nil
+				}
 				
 				if response != "y" && response != "Y" {
 					GlobalLogger.Info.Println("Configuration creation cancelled")
@@ -105,7 +108,10 @@ func configCommands() *cobra.Command {
 				fmt.Print("Create it now? (y/N): ")
 				
 				var response string
-				fmt.Scanln(&response)
+				if _, err := fmt.Scanln(&response); err != nil {
+					GlobalLogger.Warning.Printf("Failed to read input: %v\n", err)
+					return fmt.Errorf("failed to read user input")
+				}
 				
 				if response == "y" || response == "Y" {
 					config := DefaultConfig()
@@ -213,7 +219,10 @@ func configCommands() *cobra.Command {
 			fmt.Print("Are you sure? (y/N): ")
 			
 			var response string
-			fmt.Scanln(&response)
+			if _, err := fmt.Scanln(&response); err != nil {
+				GlobalLogger.Warning.Printf("Failed to read input: %v\n", err)
+				return nil
+			}
 			
 			if response != "y" && response != "Y" {
 				GlobalLogger.Info.Println("Configuration reset cancelled")
