@@ -104,9 +104,12 @@ func DetectVMwareTools(vmwarePath string) (*VMwareTools, error) {
 		VMCliPath: filepath.Join(vmwarePath, "vmcli"),
 	}
 	
-	// Check if VMware Fusion is installed
-	if _, err := os.Stat("/Applications/VMware Fusion.app"); os.IsNotExist(err) {
-		return nil, fmt.Errorf("VMware Fusion not found - please install VMware Fusion")
+	// Check if VMware Fusion is installed by validating the configured path
+	// The vmwarePath typically points to /Applications/VMware Fusion.app/Contents/Library
+	// so we need to go up two levels to get to the .app bundle
+	vmwareFusionApp := filepath.Join(vmwarePath, "..", "..")
+	if _, err := os.Stat(vmwareFusionApp); os.IsNotExist(err) {
+		return nil, fmt.Errorf("VMware Fusion not found at %s - please check your VMware installation", vmwareFusionApp)
 	}
 	
 	// Check if vmrun exists (required)
