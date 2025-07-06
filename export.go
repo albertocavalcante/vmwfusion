@@ -161,8 +161,10 @@ func (e *ISOExporter) exportSingleFile(file ISOFile, archiveDir string, manifest
 	}
 	
 	// Verify copy
-	if err := e.verifyFile(file.Path, destPath); err != nil {
-		os.Remove(destPath) // Clean up failed copy
+	if err := e.verifyFile(file.Path, destPath, hash); err != nil {
+		if removeErr := os.Remove(destPath); removeErr != nil {
+			e.logger.Warning.Printf("Failed to clean up after verification error: %v\n", removeErr)
+		}
 		return false, fmt.Errorf("verification failed: %w", err)
 	}
 	
@@ -220,8 +222,8 @@ func (e *ISOExporter) copyFile(src, dst string) error {
 	return destFile.Sync()
 }
 
-// verifyFile verifies that the copy was successful by comparing sizes
-func (e *ISOExporter) verifyFile(src, dst string) error {
+// verifyFile verifies that the copy was successful by comparing sizes and hashes
+func (e *ISOExporter) verifyFile(src, dst string, srcHash string) error {
 	srcInfo, err := os.Stat(src)
 	if err != nil {
 		return err
@@ -234,6 +236,17 @@ func (e *ISOExporter) verifyFile(src, dst string) error {
 	
 	if srcInfo.Size() != dstInfo.Size() {
 		return fmt.Errorf("size mismatch: source=%d, destination=%d", srcInfo.Size(), dstInfo.Size())
+	}
+	
+	// Calculate hash for destination file
+	dstHash, err := e.discovery.CalculateHash(dst)
+	if err != nil {
+		return fmt.Errorf("failed to calculate hash for destination file: %w", err)
+	}
+	
+	// Compare hashes for data integrity
+	if srcHash != dstHash {
+		return fmt.Errorf("hash mismatch: source and destination files differ")
 	}
 	
 	return nil
