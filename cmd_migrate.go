@@ -425,8 +425,10 @@ func syncVMBundle(sourcePath, destPath, operation string) error {
 	if exec.Command("which", "rsync").Run() == nil {
 		GlobalLogger.Info.Println("Using rsync for sync...")
 		
-		rsyncArgs := append(globalConfig.RsyncOptions, sourcePath+"/", destPath+"/")
+        rsyncArgs := append(globalConfig.RsyncOptions, sourcePath+"/", destPath+"/")
 		cmd := exec.Command("rsync", rsyncArgs...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 		
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("rsync failed: %w", err)
