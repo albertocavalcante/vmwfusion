@@ -132,11 +132,11 @@ func configCommands() *cobra.Command {
 			
 			GlobalLogger.Info.Printf("Opening configuration file with %s...\n", editor)
 			
-			// Note: In a real implementation, we'd use exec.Command to open the editor
-			// For now, just show the path
-			fmt.Printf("Please edit the configuration file at: %s\n", configPath)
-			
-			return nil
+            cmd := exec.Command(editor, configPath)
+            cmd.Stdin = os.Stdin
+            cmd.Stdout = os.Stdout
+            cmd.Stderr = os.Stderr
+            return cmd.Run()
 		},
 	}
 

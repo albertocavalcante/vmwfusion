@@ -89,7 +89,23 @@ func (v *ISOVerifier) displayVerificationResults(manifest *Manifest) ([]ISOFile,
 	var totalSize int64
 	var foundCount, missingCount int
 	
+	// Extract and sort the file paths for consistent iteration order
+	var filePaths []string
 	for _, exportedFile := range manifest.Exports {
+		filePaths = append(filePaths, exportedFile.Path)
+	}
+	sort.Strings(filePaths)
+	
+	// Iterate over the sorted file paths
+	for _, filePath := range filePaths {
+		var exportedFile ISOFile
+		for _, ef := range manifest.Exports {
+			if ef.Path == filePath {
+				exportedFile = ef
+				break
+			}
+		}
+		
 		if _, err := os.Stat(exportedFile.Path); os.IsNotExist(err) {
 			missingCount++
 			displayPath := TruncatePath(exportedFile.Path, 70)

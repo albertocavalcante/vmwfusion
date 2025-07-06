@@ -72,7 +72,7 @@ Supports hash-based duplicate detection, manifest tracking, and intelligent work
 			
 			config := ExportConfig{
 				TargetDrive:    drive,
-				ArchiveDir:     "ISO_Archive",
+				ArchiveDir:     isoArchiveDir,
 				ManifestFile:   ".iso_manifest.json",
 				IncludeVMware:  includeVMware,
 				ForceOverwrite: forceOverwrite,
