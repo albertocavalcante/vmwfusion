@@ -70,8 +70,9 @@ func (v *ISOVerifier) VerifyAndDelete() error {
 	
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(strings.ToLower(input))
 	
-	if input := strings.TrimSpace(strings.ToLower(input)); input != "y" && input != "yes" {
+	if input != "y" && input != "yes" {
 		v.logger.Info.Println("Deletion cancelled")
 		return nil
 	}
