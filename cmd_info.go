@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os/exec"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -24,44 +26,48 @@ func infoCommands() *cobra.Command {
 			GlobalLogger.Info.Println("System Information:")
 			
 			// macOS version
-			if cmd := exec.Command("sw_vers", "-productVersion"); cmd != nil {
-				if output, err := cmd.Output(); err == nil {
-					fmt.Printf("  macOS Version: %s\n", strings.TrimSpace(string(output)))
-				}
+			if output, err := exec.Command("sw_vers", "-productVersion").Output(); err == nil {
+				fmt.Printf("  macOS Version: %s\n", strings.TrimSpace(string(output)))
+			} else {
+				GlobalLogger.Warning.Printf("Could not get macOS version: %v\n", err)
 			}
 			
 			// Hardware info
-			if cmd := exec.Command("sysctl", "-n", "hw.model"); cmd != nil {
-				if output, err := cmd.Output(); err == nil {
-					fmt.Printf("  Hardware Model: %s\n", strings.TrimSpace(string(output)))
-				}
+			if output, err := exec.Command("sysctl", "-n", "hw.model").Output(); err == nil {
+				fmt.Printf("  Hardware Model: %s\n", strings.TrimSpace(string(output)))
+			} else {
+				GlobalLogger.Warning.Printf("Could not get hardware model: %v\n", err)
 			}
 			
-			if cmd := exec.Command("sysctl", "-n", "hw.ncpu"); cmd != nil {
-				if output, err := cmd.Output(); err == nil {
-					fmt.Printf("  CPU Cores: %s\n", strings.TrimSpace(string(output)))
-				}
+			if output, err := exec.Command("sysctl", "-n", "hw.ncpu").Output(); err == nil {
+				fmt.Printf("  CPU Cores: %s\n", strings.TrimSpace(string(output)))
+			} else {
+				GlobalLogger.Warning.Printf("Could not get CPU cores: %v\n", err)
 			}
 			
-			if cmd := exec.Command("sysctl", "-n", "hw.memsize"); cmd != nil {
-				if output, err := cmd.Output(); err == nil {
-					memBytes := strings.TrimSpace(string(output))
-					if len(memBytes) > 0 {
-						// Convert to GB (approximate)
+			if output, err := exec.Command("sysctl", "-n", "hw.memsize").Output(); err == nil {
+				memBytes := strings.TrimSpace(string(output))
+				if len(memBytes) > 0 {
+					if bytes, err := strconv.ParseInt(memBytes, 10, 64); err == nil {
+						memGB := float64(bytes) / (1024 * 1024 * 1024)
+						fmt.Printf("  Memory: %.1f GB\n", memGB)
+					} else {
 						fmt.Printf("  Memory: %s bytes\n", memBytes)
 					}
 				}
+			} else {
+				GlobalLogger.Warning.Printf("Could not get memory size: %v\n", err)
 			}
 			
 			// Disk space on main drive
 			fmt.Println("\nDisk Usage:")
-			if cmd := exec.Command("df", "-h", "/"); cmd != nil {
-				if output, err := cmd.Output(); err == nil {
-					lines := strings.Split(string(output), "\n")
-					if len(lines) > 1 {
-						fmt.Printf("  Root: %s\n", lines[1])
-					}
+			if output, err := exec.Command("df", "-h", "/").Output(); err == nil {
+				lines := strings.Split(string(output), "\n")
+				if len(lines) > 1 {
+					fmt.Printf("  Root: %s\n", lines[1])
 				}
+			} else {
+				GlobalLogger.Warning.Printf("Could not get disk usage: %v\n", err)
 			}
 			
 			return nil
@@ -76,14 +82,15 @@ func infoCommands() *cobra.Command {
 			GlobalLogger.Info.Println("VMware Fusion Information:")
 			
 			// Check if VMware Fusion is installed
-			fmt.Printf("  Installation Path: /Applications/VMware Fusion.app\n")
+			vmwareFusionApp := filepath.Join(globalConfig.VMwarePath, "..", "..")
+			fmt.Printf("  Installation Path: %s\n", vmwareFusionApp)
 			
 			// VMware version
-			plistPath := "/Applications/VMware Fusion.app/Contents/Info.plist"
-			if cmd := exec.Command("defaults", "read", plistPath, "CFBundleShortVersionString"); cmd != nil {
-				if output, err := cmd.Output(); err == nil {
-					fmt.Printf("  Version: %s\n", strings.TrimSpace(string(output)))
-				}
+			plistPath := filepath.Join(vmwareFusionApp, "Contents", "Info.plist")
+			if output, err := exec.Command("defaults", "read", plistPath, "CFBundleShortVersionString").Output(); err == nil {
+				fmt.Printf("  Version: %s\n", strings.TrimSpace(string(output)))
+			} else {
+				GlobalLogger.Warning.Printf("Could not get VMware version: %v\n", err)
 			}
 			
 			// Tool paths
@@ -204,16 +211,16 @@ func infoCommands() *cobra.Command {
 			fmt.Printf("\n💾 Storage:\n")
 			
 			// Check local VM directory space
-			if cmd := exec.Command("df", "-h", globalConfig.LocalVMDir); cmd != nil {
-				if output, err := cmd.Output(); err == nil {
-					lines := strings.Split(string(output), "\n")
-					if len(lines) > 1 {
-						fields := strings.Fields(lines[1])
-						if len(fields) >= 4 {
-							fmt.Printf("  • Local SSD available: %s\n", fields[3])
-						}
+			if output, err := exec.Command("df", "-h", globalConfig.LocalVMDir).Output(); err == nil {
+				lines := strings.Split(string(output), "\n")
+				if len(lines) > 1 {
+					fields := strings.Fields(lines[1])
+					if len(fields) >= 4 {
+						fmt.Printf("  • Local SSD available: %s\n", fields[3])
 					}
 				}
+			} else {
+				GlobalLogger.Warning.Printf("Could not get local VM directory space: %v\n", err)
 			}
 			
 			// Check default drive
