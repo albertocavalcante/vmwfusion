@@ -145,7 +145,11 @@ func (v *ISOVerifier) promptDeleteOriginals(files []ISOFile) error {
 		fmt.Printf("Delete %s (%s)? (y/N): ", fileName, file.FormattedSize)
 		
 		reader := bufio.NewReader(os.Stdin)
-		input, _ := reader.ReadString('\n')
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			v.logger.Warning.Printf("Failed to read input: %v\n", err)
+			continue
+		}
 		choice := strings.TrimSpace(strings.ToLower(input))
 		
 		if choice == "y" || choice == "yes" {

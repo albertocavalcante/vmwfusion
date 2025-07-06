@@ -155,7 +155,7 @@ func (d *ISODiscovery) findWithSpotlight() []ISOFile {
 				Path:          line,
 				Size:          info.Size(),
 				FormattedSize: FormatSizeSimple(info.Size()),
-				Category:      string(CategorySpotlight),
+				Category:      string(GetCategory(line)),
 			}
 			files = append(files, file)
 		}
