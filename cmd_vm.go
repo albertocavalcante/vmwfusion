@@ -333,7 +333,13 @@ func createVMClone(sourceVM, destName, cloneType string) error {
 		if err := manageVMPower(sourceBundle.VMXPath, "stop"); err != nil {
 			return fmt.Errorf("failed to stop source VM: %w", err)
 		}
-		time.Sleep(5 * time.Second) // Wait for complete shutdown
+		// Wait for VM to actually stop
+		for i := 0; i < 30; i++ { // Max 30 seconds
+			if running, _ := vmwareTools.IsVMRunning(sourceBundle.VMXPath); !running {
+				break
+			}
+			time.Sleep(1 * time.Second)
+		}
 	}
 	
 	// Create destination path
