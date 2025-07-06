@@ -196,8 +196,17 @@ func (e *ISOExporter) generateDestFileName(file ISOFile) string {
 func (e *ISOExporter) promptOverwrite() string {
 	fmt.Print("Overwrite existing file? (y/N/r=rename): ")
 	reader := bufio.NewReader(os.Stdin)
-	input, _ := reader.ReadString('\n')
-	return strings.TrimSpace(strings.ToLower(input))
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		e.logger.Error.Printf("Failed to read input: %v\n", err)
+		return "n" // Default to not overwriting on error
+	}
+	response := strings.TrimSpace(strings.ToLower(input))
+	// Accept both "y" and "yes" for consistency
+	if response == "yes" {
+		return "y"
+	}
+	return response
 }
 
 // copyFile copies a file from source to destination
