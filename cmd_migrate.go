@@ -239,11 +239,29 @@ func archiveVM(vmName, drive string, handleRunning bool) error {
 		input, _ := reader.ReadString('\n')
 		
 		if strings.TrimSpace(input) == "DELETE" {
-			// Validate that the path is within the expected VM directory
-			if !strings.HasPrefix(vmBundle.Path, globalConfig.LocalVMDir) {
-				return fmt.Errorf("VM bundle path is outside expected directory: %s", vmBundle.Path)
+			// Validate that the path is within the expected VM directory using proper path canonicalization
+			// Convert both paths to absolute, cleaned paths to prevent path traversal attacks
+			cleanBundlePath, err := filepath.Abs(filepath.Clean(vmBundle.Path))
+			if err != nil {
+				return fmt.Errorf("failed to resolve VM bundle path: %w", err)
 			}
-			if err := os.RemoveAll(vmBundle.Path); err != nil {
+			
+			cleanVMDir, err := filepath.Abs(filepath.Clean(globalConfig.LocalVMDir))
+			if err != nil {
+				return fmt.Errorf("failed to resolve VM directory path: %w", err)
+			}
+			
+			// Ensure the VM directory path ends with a separator to prevent bypassing with similar named directories
+			if !strings.HasSuffix(cleanVMDir, string(filepath.Separator)) {
+				cleanVMDir += string(filepath.Separator)
+			}
+			
+			// Check if the cleaned, absolute bundle path is within the cleaned, absolute VM directory
+			if !strings.HasPrefix(cleanBundlePath+string(filepath.Separator), cleanVMDir) {
+				return fmt.Errorf("VM bundle path is outside expected directory: %s (resolved: %s)", vmBundle.Path, cleanBundlePath)
+			}
+			
+			if err := os.RemoveAll(cleanBundlePath); err != nil {
 				return fmt.Errorf("failed to delete original VM: %w", err)
 			}
 			GlobalLogger.Success.Printf("Original VM files deleted - %s freed\n", FormatSizeSimple(vmBundle.Size))
