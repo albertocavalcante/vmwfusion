@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -382,10 +383,28 @@ func checkDriveSpace(vmBundle *VMBundle, drivePath string) error {
 		return fmt.Errorf("unexpected df output format")
 	}
 	
-	GlobalLogger.Info.Printf("VM Size: %s\n", FormatSizeSimple(vmBundle.Size))
-	GlobalLogger.Info.Printf("Target Available: %s\n", fields[3])
+	// Parse available space (in 1K blocks)
+	availableKB, err := strconv.ParseInt(fields[3], 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to parse available space: %w", err)
+	}
 	
-	// Note: This is a basic check - we could parse the actual numbers for more precise checking
+	// Convert to bytes for comparison
+	availableBytes := availableKB * 1024
+	requiredBytes := vmBundle.Size
+	
+	// Add 10% buffer for safety
+	requiredBytesWithBuffer := int64(float64(requiredBytes) * 1.1)
+	
+	GlobalLogger.Info.Printf("VM Size: %s\n", FormatSizeSimple(requiredBytes))
+	GlobalLogger.Info.Printf("Target Available: %s\n", FormatSizeSimple(availableBytes))
+	GlobalLogger.Info.Printf("Required (with 10%% buffer): %s\n", FormatSizeSimple(requiredBytesWithBuffer))
+	
+	if availableBytes < requiredBytesWithBuffer {
+		return fmt.Errorf("insufficient space: need %s (with buffer), have %s available",
+			FormatSizeSimple(requiredBytesWithBuffer), FormatSizeSimple(availableBytes))
+	}
+	
 	return nil
 }
 
